@@ -5,3 +5,5 @@
 - Persistence: Codex snapshots + rollback/restore; optional cloud backup.
 - Energy conservation: DVFS, tickless kernel, runtime PM.
 - Repo: Private GitHub under `malittlevina` initially; monorepo with clear component boundaries.
+- IPC schema format: Cap’n Proto (.capnp) chosen for ThothOS messaging.
+  Reason: Zero-copy performance, schema evolution, works with Python + Rust.
