@@ -1,0 +1,105 @@
+name: phase1-smoke-and-tracker
+on:
+  workflow_dispatch: {}         # manual Run workflow button
+  push:
+    paths:
+      - ".github/workflows/phase1.yml"
+      - "docs/progress.yaml"    # editing this will auto-run the workflow
+
+jobs:
+  smoke-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write           # allow committing tracker updates
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure folders
+        shell: bash
+        run: |
+          mkdir -p tools/scripts docs
+
+      - name: Seed docs/progress.yaml if missing
+        shell: bash
+        run: |
+          if [ ! -f docs/progress.yaml ]; then
+            cat > docs/progress.yaml <<'YAML'
+IPC-1: 30
+IPC-4: 25
+SCHED-2: 20
+YAML
+          fi
+          echo "---- progress.yaml ----"
+          cat docs/progress.yaml
+
+      - name: Seed run_smoke.sh if missing
+        shell: bash
+        run: |
+          if [ ! -f tools/scripts/run_smoke.sh ]; then
+            cat > tools/scripts/run_smoke.sh <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+check_dir(){ [ -d "$1" ] || { echo "::error ::Missing $1"; exit 1; }; }
+for d in kernel/ipc kernel/sched kernel/pm kernel/security kernel/observability \
+         daemons/prom codex/vectorstore codex/memory_graph codex/timeline \
+         scrolls/engine scrolls/rituals bridges docs tools/scripts; do
+  check_dir "$d"
+done
+echo "[smoke] OK"
+BASH
+            chmod +x tools/scripts/run_smoke.sh
+          fi
+
+      - name: Seed update_tracker.py if missing
+        shell: bash
+        run: |
+          if [ ! -f tools/scripts/update_tracker.py ]; then
+            cat > tools/scripts/update_tracker.py <<'PY'
+#!/usr/bin/env python3
+import re, pathlib, yaml
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+TRACKER = ROOT/"docs"/"TRACKER.md"
+PROGRESS = ROOT/"docs"/"progress.yaml"
+prog = yaml.safe_load(PROGRESS.read_text()) or {}
+md = TRACKER.read_text()
+def repl(m):
+  row = m.group(0)
+  cells = [c.strip() for c in row.strip().split("|")[1:-1]]
+  if len(cells) < 7: return row
+  tid = cells[0]
+  if tid in prog:
+    cells[5] = str(prog[tid])   # % column
+    return "| " + " | ".join(cells) + " |\n"
+  return row
+new = re.sub(r"^\|.*\|\s*$", repl, md, flags=re.M)
+if new != md:
+  TRACKER.write_text(new)
+  print("TRACKER.md updated")
+else:
+  print("No tracker changes")
+PY
+            chmod +x tools/scripts/update_tracker.py
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Run smoke
+        run: bash tools/scripts/run_smoke.sh
+
+      - name: Update tracker from docs/progress.yaml
+        run: python tools/scripts/update_tracker.py
+
+      - name: Commit tracker if changed
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/TRACKER.md || true
+          git diff --cached --quiet || git commit -m "ci: update TRACKER.md via progress.yaml"
+          git push
