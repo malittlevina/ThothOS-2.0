@@ -2,6 +2,14 @@ name: Restructure ThothOS scaffold
 
 on:
   workflow_dispatch: {}
+  push:
+    paths:
+      - ".github/workflows/restructure.yml"
+      - "ARCHITECTURE.md"
+      - "DECISIONS.md"
+      - "TRACKER.md"
+      - "*.py"
+      - "*.md"
 
 jobs:
   fix-tree:
