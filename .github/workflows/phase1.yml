@@ -19,38 +19,29 @@ jobs:
         run: |
           mkdir -p tools/scripts docs
 
-      - name: Seed docs/progress.yaml if missing
+      - name: Seed docs/progress.yaml if missing (or show it)
         shell: bash
         run: |
           if [ ! -f docs/progress.yaml ]; then
-            cat > docs/progress.yaml <<'YAML'
-IPC-1: 30
-IPC-4: 25
-SCHED-2: 20
-YAML
+            printf "IPC-1: 30\nIPC-4: 25\nSCHED-2: 20\n" > docs/progress.yaml
           fi
           echo "---- progress.yaml ----"
           cat docs/progress.yaml
 
-      - name: Seed run_smoke.sh if missing
+      - name: Seed tools/scripts/run_smoke.sh if missing
         shell: bash
         run: |
           if [ ! -f tools/scripts/run_smoke.sh ]; then
-            cat > tools/scripts/run_smoke.sh <<'BASH'
-#!/usr/bin/env bash
-set -euo pipefail
-check_dir(){ [ -d "$1" ] || { echo "::error ::Missing $1"; exit 1; }; }
-for d in kernel/ipc kernel/sched kernel/pm kernel/security kernel/observability \
-         daemons/prom codex/vectorstore codex/memory_graph codex/timeline \
-         scrolls/engine scrolls/rituals bridges docs tools/scripts; do
-  check_dir "$d"
-done
-echo "[smoke] OK"
-BASH
+            printf '#!/usr/bin/env bash\nset -euo pipefail\n' > tools/scripts/run_smoke.sh
+            printf 'check_dir(){ [ -d "$1" ] || { echo "::error ::Missing $1"; exit 1; }; }\n' >> tools/scripts/run_smoke.sh
+            printf 'for d in kernel/ipc kernel/sched kernel/pm kernel/security kernel/observability daemons/prom codex/vectorstore codex/memory_graph codex/timeline scrolls/engine scrolls/rituals bridges docs tools/scripts; do\n' >> tools/scripts/run_smoke.sh
+            printf '  check_dir "$d"\n' >> tools/scripts/run_smoke.sh
+            printf 'done\n' >> tools/scripts/run_smoke.sh
+            printf 'echo "[smoke] OK"\n' >> tools/scripts/run_smoke.sh
             chmod +x tools/scripts/run_smoke.sh
           fi
 
-      - name: Seed update_tracker.py if missing
+      - name: Seed tools/scripts/update_tracker.py if missing
         shell: bash
         run: |
           if [ ! -f tools/scripts/update_tracker.py ]; then
@@ -58,25 +49,26 @@ BASH
 #!/usr/bin/env python3
 import re, pathlib, yaml
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-TRACKER = ROOT/"docs"/"TRACKER.md"
-PROGRESS = ROOT/"docs"/"progress.yaml"
+TRACKER = ROOT / "docs" / "TRACKER.md"
+PROGRESS = ROOT / "docs" / "progress.yaml"
 prog = yaml.safe_load(PROGRESS.read_text()) or {}
 md = TRACKER.read_text()
 def repl(m):
-  row = m.group(0)
-  cells = [c.strip() for c in row.strip().split("|")[1:-1]]
-  if len(cells) < 7: return row
-  tid = cells[0]
-  if tid in prog:
-    cells[5] = str(prog[tid])   # % column
-    return "| " + " | ".join(cells) + " |\n"
-  return row
+    row = m.group(0)
+    cells = [c.strip() for c in row.strip().split("|")[1:-1]]
+    if len(cells) < 7:
+        return row
+    tid = cells[0]
+    if tid in prog:
+        cells[5] = str(prog[tid])  # % column
+        return "| " + " | ".join(cells) + " |\n"
+    return row
 new = re.sub(r"^\|.*\|\s*$", repl, md, flags=re.M)
 if new != md:
-  TRACKER.write_text(new)
-  print("TRACKER.md updated")
+    TRACKER.write_text(new)
+    print("TRACKER.md updated")
 else:
-  print("No tracker changes")
+    print("No tracker changes")
 PY
             chmod +x tools/scripts/update_tracker.py
           fi
@@ -92,7 +84,7 @@ PY
       - name: Run smoke
         run: bash tools/scripts/run_smoke.sh
 
-      - name: Update tracker from docs/progress.yaml
+      - name: Update tracker
         run: python tools/scripts/update_tracker.py
 
       - name: Commit tracker if changed
