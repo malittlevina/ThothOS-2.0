@@ -3,17 +3,17 @@
 ## Milestone 1 — IPC Fabric v2
 | Task ID | Task | Description | Dependency Modules | Owner | % | Notes |
 |---|---|---|---|---|---|---|
-| IPC-1 | Define IDL format | Versioned schema + feature flags | kernel/ipc |  | 0 |  |
+| IPC-1 | Define IDL format | Versioned schema + feature flags | kernel/ipc | malittlevina | 0 |  |
 | IPC-2 | Shared-memory rings | Zero-copy transport for large payloads | kernel/ipc, kernel/observability |  | 0 |  |
 | IPC-3 | Inline fast path | Optimize small control messages | kernel/ipc |  | 0 |  |
-| IPC-4 | Service registry | Discovery, health, locality routing | kernel/ipc |  | 0 |  |
+| IPC-4 | Service registry | Discovery, health, locality routing | kernel/ipc | malittlevina | 0 |  |
 | IPC-5 | Contract tests | Wire protocol tests pre-activation | kernel/ipc, tools |  | 0 |  |
 
 ## Milestone 2 — Energy-Aware Scheduling
 | Task ID | Task | Description | Dependency Modules | Owner | % | Notes |
 |---|---|---|---|---|---|---|
 | SCHED-1 | DVFS hints | Adjust P/C states by load | kernel/sched, kernel/pm |  | 0 |  |
-| SCHED-2 | Tickless kernel | Remove periodic timer interrupts | kernel/sched |  | 0 |  |
+| SCHED-2 | Tickless kernel | Remove periodic timer interrupts | kernel/sched | malittlevina | 0 |  |
 | SCHED-3 | Timer batching | Batch timers & I/O completions | kernel/sched, kernel/ipc |  | 0 |  |
 | SCHED-4 | I/O-aware scheduling | Align threads with I/O events | kernel/sched, kernel/ipc |  | 0 |  |
 
