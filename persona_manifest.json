@@ -1,0 +1,49 @@
+{
+  "personas": [
+    {
+      "name": "Navigator",
+      "unimind_node": "PrefrontalCortex",
+      "role": "planning"
+    },
+    {
+      "name": "Empath",
+      "unimind_node": "Amygdala",
+      "role": "affect"
+    },
+    {
+      "name": "Archivist",
+      "unimind_node": "Hippocampus",
+      "role": "memory"
+    },
+    {
+      "name": "Logician",
+      "unimind_node": "Broca",
+      "role": "reasoning"
+    },
+    {
+      "name": "Seer",
+      "unimind_node": "PinealGland",
+      "role": "simulation"
+    },
+    {
+      "name": "Guardian",
+      "unimind_node": "Insula",
+      "role": "safety"
+    },
+    {
+      "name": "Artisan",
+      "unimind_node": "MotorCortex",
+      "role": "action"
+    },
+    {
+      "name": "Mirror",
+      "unimind_node": "MirrorNetwork",
+      "role": "reflection"
+    },
+    {
+      "name": "Oracle",
+      "unimind_node": "OracleArchitect",
+      "role": "debate"
+    }
+  ]
+}
