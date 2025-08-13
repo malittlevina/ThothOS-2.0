@@ -2,35 +2,116 @@ name: ThothOS Phase-1 smoke + tracker
 
 on:
   workflow_dispatch: {}
-  # (Optional) uncomment to auto-run on edits to these paths
-  # push:
-  #   paths:
-  #     - "docs/progress.yaml"
-  #     - "kernel/**"
-  #     - "tools/scripts/**"
-  #     - ".github/workflows/progress.yml"
 
 jobs:
   smoke-and-update:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # allow committing the updated tracker
+      contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure folders exist
+        run: |
+          set -eux
+          mkdir -p tools/scripts docs .github/workflows
+
+      - name: Create docs/progress.yaml if missing
+        run: |
+          set -eux
+          if [ ! -f docs/progress.yaml ]; then
+            cat > docs/progress.yaml <<'YAML'
+IPC-1: 30
+IPC-4: 25
+SCHED-2: 20
+YAML
+          fi
+          cat docs/progress.yaml
+
+      - name: Create tools/scripts/run_smoke.sh if missing
+        run: |
+          set -eux
+          if [ ! -f tools/scripts/run_smoke.sh ]; then
+            cat > tools/scripts/run_smoke.sh <<'BASH'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[smoke] Starting Phase-1 checks..."
+
+check_dir() {
+  if [ ! -d "$1" ]; then
+    echo "::error ::Missing directory: $1"
+    exit 1
+  fi
+  echo "[ok] Found $1"
+}
+
+check_dir kernel/ipc
+check_dir kernel/sched
+check_dir kernel/pm
+check_dir kernel/security
+check_dir kernel/observability
+check_dir daemons/prom
+check_dir codex/vectorstore
+check_dir codex/memory_graph
+check_dir codex/timeline
+check_dir scrolls/engine
+check_dir scrolls/rituals
+check_dir bridges
+check_dir docs
+check_dir tools/scripts
+
+echo "[smoke] All required dirs present."
+BASH
+            chmod +x tools/scripts/run_smoke.sh
+          fi
+          ls -l tools/scripts/run_smoke.sh
+
+      - name: Create tools/scripts/update_tracker.py if missing
+        run: |
+          set -eux
+          if [ ! -f tools/scripts/update_tracker.py ]; then
+            cat > tools/scripts/update_tracker.py <<'PY'
+#!/usr/bin/env python3
+# Update % column in docs/TRACKER.md based on docs/progress.yaml
+import re, sys, pathlib, yaml
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+TRACKER = ROOT / "docs" / "TRACKER.md"
+PROGRESS = ROOT / "docs" / "progress.yaml"
+
+def main():
+  prog = yaml.safe_load(PROGRESS.read_text())
+  md = TRACKER.read_text()
+  def repl(m):
+    row = m.group(0)
+    cells = [c.strip() for c in row.strip().split("|")[1:-1]]
+    if len(cells) < 7: return row
+    task_id = cells[0]
+    if task_id in prog:
+      cells[5] = str(prog[task_id])  # % column
+      return "| " + " | ".join(cells) + " |\n"
+    return row
+  new = re.sub(r"^\|.*\|\s*$", repl, md, flags=re.M|re.S)
+  if new != md:
+    TRACKER.write_text(new)
+    print("[update_tracker] TRACKER.md updated.")
+  else:
+    print("[update_tracker] no changes.")
+if __name__ == "__main__":
+  sys.exit(main())
+PY
+            chmod +x tools/scripts/update_tracker.py
+          fi
+          ls -l tools/scripts/update_tracker.py
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      - name: Install deps
+      - name: Install deps for update script
         run: |
           python -m pip install --upgrade pip
-          pip install -r tools/scripts/requirements.txt || true
-
-      - name: Make scripts executable
-        run: |
-          chmod +x tools/scripts/run_smoke.sh || true
+          pip install pyyaml
 
       - name: Phase-1 smoke tests
         run: |
