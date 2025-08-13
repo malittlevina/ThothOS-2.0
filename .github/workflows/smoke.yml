@@ -11,4 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Echo
-        run: echo "Actions are working on branch: ${GITHUB_REF}"
+        shell: bash
+        run: |
+          echo "Actions are working."
+          echo "Ref: $GITHUB_REF"
