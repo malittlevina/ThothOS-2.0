@@ -1,0 +1,74 @@
+name: Restructure ThothOS scaffold
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  fix-tree:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create folders
+        run: |
+          set -eux
+          mkdir -p kernel/ipc kernel/sched kernel/pm kernel/security kernel/observability
+          mkdir -p daemons/prom daemons/mirrors daemons/oracle_architect
+          mkdir -p unimind/nodes unimind/ethics unimind/memory
+          mkdir -p codex/vectorstore codex/memory_graph codex/timeline
+          mkdir -p scrolls/engine scrolls/registry scrolls/rituals
+          mkdir -p storyrealms/editor storyrealms/ghosteye storyrealms/rating
+          mkdir -p glyphforge/nodes glyphforge/timeline glyphforge/godmode
+          mkdir -p bridges xr/hud docs tools/build tools/scripts
+
+      - name: Move files into place (idempotent)
+        run: |
+          set -eux
+          mv_if() { [ -f "$1" ] && git mv -f "$1" "$2" || true; }
+          # Docs
+          mv_if ARCHITECTURE.md docs/ARCHITECTURE.md
+          mv_if DECISIONS.md docs/DECISIONS.md
+          mv_if TRACKER.md docs/TRACKER.md
+          # Kernel
+          mv_if idl.capnp kernel/ipc/idl.capnp
+          mv_if registry.py kernel/ipc/registry.py
+          mv_if rings.rs kernel/ipc/rings.rs
+          mv_if scheduler.py kernel/sched/scheduler.py
+          mv_if policy.py kernel/pm/policy.py
+          mv_if capabilities.py kernel/security/capabilities.py
+          mv_if tracing.py kernel/observability/tracing.py
+          # Codex
+          mv_if config.yaml codex/vectorstore/config.yaml
+          mv_if graph.py codex/memory_graph/graph.py
+          mv_if timeline.py codex/timeline/timeline.py
+          # Daemons
+          mv_if core.py daemons/prom/core.py
+          mv_if persona_manifest.json daemons/prom/persona_manifest.json
+          mv_if debate.py daemons/oracle_architect/debate.py
+          # Scrolls
+          mv_if scroll_engine.py scrolls/engine/scroll_engine.py
+          mv_if optimize_self.md scrolls/rituals/optimize_self.md
+          # Bridges
+          mv_if realm_interface.py bridges/realm_interface.py
+          mv_if memory_tree_interface.py bridges/memory_tree_interface.py
+          mv_if thirdparty_gateway.py bridges/thirdparty_gateway.py
+          mv_if thoth_bridge.py bridges/thoth_bridge.py
+          # Tools
+          mv_if dev_env_check.sh tools/scripts/dev_env_check.sh
+          # Cleanup (optional)
+          rm -f thothos_restart_scaffold_v1.zip || true
+          # Make script executable if it exists
+          [ -f tools/scripts/dev_env_check.sh ] && chmod +x tools/scripts/dev_env_check.sh || true
+
+      - name: Commit & push
+        run: |
+          set -eux
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --staged --quiet || ! git diff --quiet; then
+            git add -A
+            git commit -m "Restructure scaffold: auto-create folders and move files"
+            git push
+          else
+            echo "No changes to commit."
+          fi
