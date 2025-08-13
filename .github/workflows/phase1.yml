@@ -1,16 +1,16 @@
 name: phase1-smoke-and-tracker
 on:
-  workflow_dispatch: {}         # manual Run workflow button
+  workflow_dispatch: {}
   push:
     paths:
       - ".github/workflows/phase1.yml"
-      - "docs/progress.yaml"    # editing this will auto-run the workflow
+      - "docs/progress.yaml"
 
 jobs:
   smoke-and-update:
     runs-on: ubuntu-latest
     permissions:
-      contents: write           # allow committing tracker updates
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -24,9 +24,9 @@ jobs:
         run: |
           if [ ! -f docs/progress.yaml ]; then
             cat > docs/progress.yaml <<'YAML'
-IPC-1:30
-IPC-4:25
-SCHED-2:20
+IPC-1: 30
+IPC-4: 25
+SCHED-2: 20
 YAML
           fi
           echo "---- progress.yaml ----"
