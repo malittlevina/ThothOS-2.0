@@ -1,11 +1,10 @@
-name: Sanity smoke
-
-on:
-  workflow_dispatch: {}  # manual run button
+name: sanity-smoke
+on: [workflow_dispatch]
 
 jobs:
   hello:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "✅ Actions are working on branch: $GITHUB_REF"
+      - name: Echo
+        run: echo "Actions are working on branch: ${GITHUB_REF}"
